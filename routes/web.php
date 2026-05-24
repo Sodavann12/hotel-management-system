@@ -8,7 +8,10 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
-// Breeze dashboard redirect to admin dashboard
+Route::get('/', function () {
+    return view('welcome');
+});
+
 Route::get('/dashboard', function () {
     return redirect()->route('admin.dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
