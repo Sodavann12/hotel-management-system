@@ -3,63 +3,80 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\HousekeepingTask;
+use App\Models\Room;
+use App\Models\Staff;
 use Illuminate\Http\Request;
 
 class HousekeepingController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(Request $request): \Illuminate\View\View
     {
-        //
+        $tasks = HousekeepingTask::with(['room', 'staff.user'])
+            ->when($request->status, fn($q) => $q->where('status', $request->status))
+            ->latest()
+            ->paginate(20);
+
+        return view('admin.housekeeping.index', compact('tasks'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(): \Illuminate\View\View
     {
-        //
+        $rooms = Room::orderBy('number')->get();
+        $staff = Staff::with('user')->where('is_active', true)->get();
+        return view('admin.housekeeping.create', compact('rooms', 'staff'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        //
+        $validated = $request->validate([
+            'room_id'      => ['required', 'exists:rooms,id'],
+            'staff_id'     => ['nullable', 'exists:staff,id'],
+            'type'         => ['required', 'in:cleaning,turndown,deep_clean,inspection'],
+            'scheduled_at' => ['required', 'date'],
+            'notes'        => ['nullable', 'string'],
+        ]);
+
+        $validated['status'] = 'pending';
+
+        HousekeepingTask::create($validated);
+
+        return redirect()
+            ->route('admin.housekeeping.index')
+            ->with('success', 'Housekeeping task created.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(HousekeepingTask $housekeeping): \Illuminate\View\View
     {
-        //
+        return view('admin.housekeeping.show', compact('housekeeping'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function edit(HousekeepingTask $housekeeping): \Illuminate\View\View
     {
-        //
+        $rooms = Room::orderBy('number')->get();
+        $staff = Staff::with('user')->where('is_active', true)->get();
+        return view('admin.housekeeping.edit', compact('housekeeping', 'rooms', 'staff'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, HousekeepingTask $housekeeping): \Illuminate\Http\RedirectResponse
     {
-        //
+        $validated = $request->validate([
+            'status' => ['required', 'in:pending,in_progress,completed,skipped'],
+            'notes'  => ['nullable', 'string'],
+        ]);
+
+        $housekeeping->update($validated);
+
+        return redirect()
+            ->route('admin.housekeeping.index')
+            ->with('success', 'Task updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(HousekeepingTask $housekeeping): \Illuminate\Http\RedirectResponse
     {
-        //
+        $housekeeping->delete();
+        return redirect()
+            ->route('admin.housekeeping.index')
+            ->with('success', 'Task deleted.');
     }
 }

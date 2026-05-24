@@ -3,63 +3,82 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Staff;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class StaffController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function index(): \Illuminate\View\View
     {
-        //
+        $staff = Staff::with('user')->latest()->paginate(20);
+        return view('admin.staff.index', compact('staff'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function create(): \Illuminate\View\View
     {
-        //
+        $users = User::all();
+        return view('admin.staff.create', compact('users'));
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
+    public function store(Request $request): \Illuminate\Http\RedirectResponse
     {
-        //
+        $validated = $request->validate([
+            'user_id'     => ['required', 'exists:users,id'],
+            'employee_id' => ['required', 'string', 'unique:staff,employee_id'],
+            'department'  => ['required', 'string'],
+            'position'    => ['required', 'string'],
+            'phone'       => ['nullable', 'string'],
+            'shift'       => ['required', 'in:morning,afternoon,night,rotating'],
+            'joined_at'   => ['required', 'date'],
+        ]);
+
+        $validated['is_active'] = true;
+
+        Staff::create($validated);
+
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Staff member added successfully.');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(Staff $staff): \Illuminate\View\View
     {
-        //
+        $staff->load('user');
+        return view('admin.staff.show', compact('staff'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function edit(Staff $staff): \Illuminate\View\View
     {
-        //
+        $users = User::all();
+        return view('admin.staff.edit', compact('staff', 'users'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function update(Request $request, Staff $staff): \Illuminate\Http\RedirectResponse
     {
-        //
+        $validated = $request->validate([
+            'department' => ['required', 'string'],
+            'position'   => ['required', 'string'],
+            'phone'      => ['nullable', 'string'],
+            'shift'      => ['required', 'in:morning,afternoon,night,rotating'],
+            'joined_at'  => ['required', 'date'],
+            'is_active'  => ['required', 'in:0,1'],
+        ]);
+
+        $validated['is_active'] = (bool) $validated['is_active'];
+
+        $staff->update($validated);
+
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Staff member updated successfully.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
+    public function destroy(Staff $staff): \Illuminate\Http\RedirectResponse
     {
-        //
+        $staff->delete();
+        return redirect()
+            ->route('admin.staff.index')
+            ->with('success', 'Staff member removed.');
     }
 }
