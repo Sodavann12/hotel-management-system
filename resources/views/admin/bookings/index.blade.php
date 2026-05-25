@@ -32,9 +32,16 @@
                 <label class="block text-xs text-gray-500 mb-1">Status</label>
                 <select name="status" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                     <option value="">All statuses</option>
-                    @foreach(['pending','confirmed','checked_in','checked_out','cancelled','no_show'] as $status)
-                        <option value="{{ $status }}" {{ request('status') === $status ? 'selected' : '' }}>
-                            {{ ucfirst(str_replace('_', ' ', $status)) }}
+                    @foreach([
+                        'pending'     => '⏳ Pending',
+                        'confirmed'   => '✅ Confirmed',
+                        'checked_in'  => '🏨 Checked In',
+                        'checked_out' => '👋 Checked Out',
+                        'cancelled'   => '❌ Cancelled',
+                        'no_show'     => '🚫 No Show',
+                    ] as $value => $label)
+                        <option value="{{ $value }}" {{ request('status') === $value ? 'selected' : '' }}>
+                            {{ $label }}
                         </option>
                     @endforeach
                 </select>

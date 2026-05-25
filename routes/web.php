@@ -3,21 +3,50 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin;
 
-// Root redirect to login
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+// ── Public routes ────────────────────────────────────────────────────────────
 
+// Welcome page (home)
 Route::get('/', function () {
     return view('welcome');
-});
+})->name('welcome');
 
+// Browse rooms (public)
+Route::get('/rooms', [App\Http\Controllers\Guest\RoomListingController::class, 'index'])
+    ->name('rooms.index');
+
+Route::get('/rooms/{room}', [App\Http\Controllers\Guest\RoomListingController::class, 'show'])
+    ->name('rooms.show');
+
+// ── Breeze dashboard redirect ────────────────────────────────────────────────
 Route::get('/dashboard', function () {
-    return redirect()->route('admin.dashboard');
+    return redirect('/');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// All admin routes — must be logged in
-Route::middleware(['auth', 'verified'])
+// ── Authenticated guest routes ───────────────────────────────────────────────
+Route::middleware(['auth'])->group(function () {
+
+    Route::get('/book/{room}', [App\Http\Controllers\Guest\BookingController::class, 'create'])
+        ->name('guest.booking.create');
+
+    Route::post('/book/{room}', [App\Http\Controllers\Guest\BookingController::class, 'store'])
+        ->name('guest.booking.store');
+
+    Route::get('/booking/confirmed/{booking}', [App\Http\Controllers\Guest\BookingController::class, 'confirmed'])
+        ->name('guest.booking.confirmed');
+
+    Route::get('/my-bookings', [App\Http\Controllers\Guest\BookingController::class, 'myBookings'])
+        ->name('guest.bookings');
+
+    Route::post('/my-bookings/{booking}/cancel', [App\Http\Controllers\Guest\BookingController::class, 'cancel'])
+        ->name('guest.booking.cancel');
+
+    Route::get('/profile', [App\Http\Controllers\Guest\ProfileController::class, 'index'])
+        ->name('guest.profile');
+
+});
+
+// ── Admin routes (staff only) ────────────────────────────────────────────────
+Route::middleware(['auth', 'admin'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {
@@ -25,6 +54,10 @@ Route::middleware(['auth', 'verified'])
     // Dashboard
     Route::get('/dashboard', [Admin\DashboardController::class, 'index'])
         ->name('dashboard');
+
+    // Admin Profile
+    Route::get('/profile', [Admin\ProfileController::class, 'index'])
+        ->name('profile');
 
     // Room Types
     Route::resource('room-types', Admin\RoomTypeController::class);
@@ -70,7 +103,8 @@ Route::middleware(['auth', 'verified'])
     Route::get('reports/revenue',
         [Admin\ReportController::class, 'revenue'])
         ->name('reports.revenue');
+
 });
 
-// Breeze auth routes
+// ── Breeze auth routes (login, register, logout) ─────────────────────────────
 require __DIR__.'/auth.php';

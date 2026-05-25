@@ -19,11 +19,21 @@
 
     {{-- Status Filter Tabs --}}
     <div class="flex gap-2 mb-6 flex-wrap">
-        @foreach(['all' => 'All', 'available' => 'Available', 'occupied' => 'Occupied', 'reserved' => 'Reserved', 'dirty' => 'Dirty', 'maintenance' => 'Maintenance'] as $value => $label)
+        @foreach([
+            'all'         => ['label' => 'All Rooms',    'icon' => 'fa-th-large'],
+            'available'   => ['label' => 'Available',    'icon' => 'fa-check-circle'],
+            'occupied'    => ['label' => 'Occupied',     'icon' => 'fa-user'],
+            'reserved'    => ['label' => 'Reserved',     'icon' => 'fa-calendar'],
+            'dirty'       => ['label' => 'Dirty',        'icon' => 'fa-broom'],
+            'maintenance' => ['label' => 'Maintenance',  'icon' => 'fa-tools'],
+        ] as $value => $item)
             <a href="{{ $value === 'all' ? route('admin.rooms.index') : route('admin.rooms.index', ['status' => $value]) }}"
-               class="px-3 py-1.5 rounded-full text-xs font-medium border
-               {{ request('status', 'all') === $value ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
-                {{ $label }}
+            class="px-3 py-1.5 rounded-full text-xs font-medium border flex items-center gap-1.5
+            {{ request('status', 'all') === $value
+                ? 'bg-blue-600 text-white border-blue-600'
+                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50' }}">
+                <i class="fas {{ $item['icon'] }}"></i>
+                {{ $item['label'] }}
             </a>
         @endforeach
     </div>
